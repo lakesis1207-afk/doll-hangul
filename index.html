@@ -1,0 +1,1582 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffe9f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="한글 놀이">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<title>인형이랑 한글 놀이</title>
+<style>
+  :root {
+    --bg: #fff6f9;
+    --bg2: #ffe9f0;
+    --card: #ffffff;
+    --ink: #4a3b47;
+    --muted: #8f7f8b;
+    --pink: #ff8fb1;
+    --pink-dark: #e86a92;
+    --mint: #7fd8be;
+    --sky: #8ec5ff;
+    --sun: #ffd166;
+    --lilac: #c3a6ff;
+    --peach: #ffb38a;
+    --gray: #d9d2d7;
+    --red: #ff6b6b;
+    --shadow: 0 4px 0 rgba(0,0,0,.08), 0 8px 20px rgba(232,106,146,.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background: linear-gradient(180deg, var(--bg2), var(--bg) 40%) fixed;
+    color: var(--ink);
+    font-family: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+    touch-action: manipulation;
+    user-select: none; -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; background: none; }
+  button:disabled { opacity: .4; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--pink-dark); outline-offset: 2px; }
+  .screen {
+    display: none; min-height: 100dvh; max-width: 520px; margin: 0 auto; flex-direction: column;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .screen.on { display: flex; }
+
+  /* 인형 얼굴: 사진이 있으면 사진, 없으면 곰 인형 그림 */
+  .doll { background: var(--bg2) center 35% / cover no-repeat; display: grid; place-items: center; overflow: hidden; }
+  .doll.noimg::after { content: "🧸"; font-size: 62%; line-height: 1; }
+
+  /* 정답 힌트: 반짝반짝 */
+  .glow { animation: glow 0.9s ease-in-out infinite !important; box-shadow: 0 0 0 6px var(--sun), var(--shadow) !important; }
+  @keyframes glow { 50% { box-shadow: 0 0 0 12px rgba(255,209,102,.35), var(--shadow); transform: scale(1.05); } }
+
+  /* ---------- 공통 버튼 ---------- */
+  .pill { background: var(--pink); color: #fff; border-radius: 999px; padding: 16px 26px; font-size: 22px; box-shadow: var(--shadow); }
+  .pill.wide { width: 100%; }
+  .link { color: var(--muted); font-size: 16px; padding: 10px; text-decoration: underline; }
+  .bottom { margin-top: auto; padding-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .hold-btn { color: var(--muted); font-size: 14px; padding: 8px 14px; border-radius: 999px; border: 2px dashed var(--gray); position: relative; overflow: hidden; isolation: isolate; }
+  .hold-btn .fill { position: absolute; inset: 0; background: var(--bg2); transform-origin: left; transform: scaleX(0); z-index: -1; }
+  .hold-btn.holding .fill { transform: scaleX(1); transition: transform 2s linear; }
+
+  /* ---------- 설명 화면 ---------- */
+  .intro-head { text-align: center; }
+  .intro-head .big-doll { font-size: 76px; line-height: 1; animation: bob 2.4s ease-in-out infinite; }
+  .intro-head h1 { font-size: 28px; margin: 8px 0 4px; color: var(--pink-dark); font-weight: normal; }
+  .intro-head p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.5; }
+  .info { background: var(--card); border-radius: 22px; padding: 16px 18px; box-shadow: var(--shadow); margin-top: 14px; }
+  .info h2 { margin: 0 0 8px; font-size: 19px; color: var(--pink-dark); font-weight: normal; }
+  .info ul { margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.65; }
+  .info .lv { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 16px; align-items: center; }
+  .info .lv b { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; color: #fff; font-weight: normal; font-size: 15px; }
+  .info small { color: var(--muted); }
+
+  /* ---------- 등록 단계 ---------- */
+  .step-head { text-align: center; }
+  .step-head .step { color: var(--muted); font-size: 15px; letter-spacing: .5px; }
+  .step-head h1 { font-size: 26px; margin: 4px 0 6px; color: var(--pink-dark); font-weight: normal; }
+  .step-head p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+  .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 18px; }
+  .slot { aspect-ratio: 1; max-width: 100%; border-radius: 22px; position: relative; border: 3px dashed var(--gray); background: #fff; display: grid; place-items: center; font-size: 15px; color: var(--muted); }
+  .slot .plus { font-size: 34px; line-height: 1; color: var(--pink); display: block; }
+  .slot.filled { border: 4px solid #fff; box-shadow: var(--shadow); background: center / cover no-repeat; }
+  .slot .del { position: absolute; right: -8px; top: -8px; width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 16px; display: grid; place-items: center; }
+  .slot.busy::after { content: "⏳"; font-size: 28px; }
+  .name-preview { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
+  .name-preview .doll { width: 140px; height: 140px; border-radius: 50%; border: 6px solid #fff; box-shadow: var(--shadow); font-size: 120px; }
+  .name-preview .say { font-size: 24px; color: var(--pink-dark); min-height: 32px; }
+  .name-input { width: 100%; margin-top: 14px; font: inherit; font-size: 26px; text-align: center; padding: 14px; border-radius: 18px; border: 3px solid var(--gray); background: #fff; color: var(--ink); outline: none; user-select: text; -webkit-user-select: text; }
+  .name-input:focus { border-color: var(--pink); }
+  .field-label { margin: 18px 0 -6px 4px; font-size: 17px; color: var(--pink-dark); }
+  .fam-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .fam-row .name-input { font-size: 20px; padding: 12px 6px; }
+  .rec-list { display: grid; gap: 10px; margin-top: 16px; }
+  .rec-group { font-size: 17px; color: var(--pink-dark); margin: 8px 0 -2px 4px; }
+  .rec { background: #fff; border-radius: 18px; padding: 10px 12px; box-shadow: var(--shadow); display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+  .rec .ex { font-size: 18px; min-width: 0; }
+  .rec .ex small { display: block; color: var(--muted); font-size: 13px; }
+  .rec .btns { display: flex; gap: 6px; }
+  .rec .btns button { width: 48px; height: 48px; border-radius: 50%; background: var(--bg2); font-size: 20px; display: grid; place-items: center; }
+  .rec .btns .r { background: var(--red); color: #fff; }
+  .rec.recording .btns .r { animation: pulse 1s infinite; }
+  .rec .done-mark { color: #3aa58a; }
+  @keyframes pulse { 50% { transform: scale(1.12); } }
+  .notice { background: #fff1c2; border-radius: 14px; padding: 10px 14px; font-size: 15px; line-height: 1.5; margin-top: 12px; }
+  .notice:empty { display: none; }
+
+  /* ---------- 처음 화면 ---------- */
+  .hero { text-align: center; margin-top: 4px; position: relative; }
+  .hero-photo { width: 140px; height: 140px; border-radius: 50%; margin: 0 auto; font-size: 116px; border: 6px solid #fff; box-shadow: var(--shadow); animation: bob 2.4s ease-in-out infinite; }
+  .hero h1 { font-size: 26px; margin: 10px 0 2px; color: var(--pink-dark); letter-spacing: -0.5px; text-wrap: balance; font-weight: normal; }
+  .hero p { margin: 0; color: var(--muted); font-size: 16px; }
+  .corner { position: absolute; top: 0; width: 48px; height: 48px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); font-size: 22px; color: var(--muted); }
+  .corner.l { left: 0; } .corner.r { right: 0; }
+  @keyframes bob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-8px) rotate(2deg); } }
+
+  .stages { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .tile { background: var(--card); border-radius: 22px; padding: 12px 10px 10px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; position: relative; transition: transform .1s; min-height: 132px; }
+  .tile:active { transform: scale(.96); }
+  .tile .no { position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; border-radius: 9px; color: #fff; font-size: 14px; display: grid; place-items: center; }
+  .tile .ico { font-size: 42px; line-height: 1.15; }
+  .tile b { font-size: 18px; font-weight: normal; }
+  .tile small { color: var(--muted); font-size: 13px; }
+  .tile .stars { position: absolute; right: 10px; top: 10px; font-size: 12px; }
+  .tile.locked { opacity: .45; }
+  .tile.locked .ico { filter: grayscale(1); }
+  .tile.locked .no { background: var(--gray) !important; }
+  .tile.wide { grid-column: 1 / -1; min-height: 0; flex-direction: row; justify-content: center; gap: 12px; padding: 12px; }
+  .tile.wide .ico { font-size: 36px; }
+  .tile.wide span.txt { display: flex; flex-direction: column; align-items: flex-start; }
+  .parent { margin: 18px auto 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .parent-panel { display: none; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .parent-panel.on { display: flex; }
+  .parent-panel button { background: #fff; padding: 10px 14px; border-radius: 14px; box-shadow: var(--shadow); font-size: 15px; }
+
+  /* ---------- 놀이 화면 ---------- */
+  .top { display: flex; align-items: center; gap: 10px; }
+  .round-btn { width: 52px; height: 52px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 24px; flex: none; }
+  .dots { flex: 1; display: flex; justify-content: center; gap: 8px; }
+  .dots i { width: 18px; height: 18px; border-radius: 50%; background: var(--gray); transition: background .3s, transform .3s; }
+  .dots i.done { background: var(--sun); transform: scale(1.15); }
+  .ask { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; }
+  .ask .doll { width: 64px; height: 64px; border-radius: 50%; flex: none; border: 4px solid #fff; box-shadow: var(--shadow); font-size: 54px; }
+  .bubble { background: #fff; border-radius: 20px; padding: 12px 16px; font-size: 21px; line-height: 1.35; box-shadow: var(--shadow); position: relative; flex: 1; min-width: 0; }
+  .bubble::before { content: ""; position: absolute; left: -8px; top: 22px; border: 8px solid transparent; border-left: 0; border-right-color: #fff; }
+  .play { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; padding: 6px 0; min-height: 220px; width: 100%; }
+
+  .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+  .choice { background: #fff; border-radius: 24px; box-shadow: var(--shadow); height: 92px; font-size: 44px; transition: transform .1s, background .2s, opacity .2s; }
+  .choice:nth-child(4n+1) { color: var(--pink-dark); }
+  .choice:nth-child(4n+2) { color: #3aa58a; }
+  .choice:nth-child(4n+3) { color: #4a8ad8; }
+  .choice:nth-child(4n+4) { color: #b07a1e; }
+  .choice.letter { font-size: 58px; height: 108px; }
+  .choice.pic { font-size: 56px; height: 104px; }
+  .choice:active { transform: scale(.94); }
+  .wrong { opacity: .35; animation: shake .4s; }
+  .choice.right { background: var(--sun); }
+  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+  /* 글을 몰라도 알 수 있는 그림 버튼 (목소리로 색·모양을 알려 줘요) */
+  .icon-btn { width: 80px; height: 80px; border-radius: 50%; box-shadow: var(--shadow); font-size: 38px; display: grid; place-items: center; color: #fff; flex: none; transition: transform .1s; }
+  .icon-btn:active { transform: scale(.92); }
+  .icon-btn.go { background: #3ec28f; }
+  .icon-btn.erase { background: var(--sky); }
+  .icon-btn.next { background: var(--pink); }
+  .icon-btn.again { background: var(--sun); }
+  .icon-btn.home { background: #fff; }
+  .row-btns { display: flex; gap: 14px; }
+
+  /* 그림 + 낱말 카드 */
+  .word-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .word-card .pic { width: 150px; height: 150px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 96px; line-height: 1; }
+  .word { font-size: 44px; letter-spacing: 2px; }
+  .word .syl { display: inline-block; padding: 0 5px; border-radius: 12px; transition: background .2s, transform .2s; }
+  .word .syl.lit { background: var(--sun); transform: scale(1.12); }
+
+  /* 박수로 말 나누기 */
+  .beats { display: flex; gap: 10px; min-height: 44px; justify-content: center; flex-wrap: wrap; }
+  .beat { width: 40px; height: 40px; border-radius: 50%; background: var(--pink); box-shadow: var(--shadow); animation: pop-in .2s ease-out; }
+  .beat.ghost { background: transparent; border: 3px dashed var(--pink); box-shadow: none; animation: none; }
+  .drum { width: 140px; height: 140px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); font-size: 88px; line-height: 1; display: grid; place-items: center; }
+  .drum.hit { animation: hit .18s ease-out; }
+  @keyframes hit { 50% { transform: scale(.88) rotate(-5deg); } }
+
+  /* 말 만들기 블록 */
+  .mystery { width: 130px; height: 130px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 80px; line-height: 1; }
+  .mystery.open { animation: pop-in .4s ease-out; }
+  .blocks { display: flex; gap: 22px; justify-content: center; padding-top: 12px; transition: gap .4s; }
+  .blocks.joined { gap: 0; }
+  .block { min-width: 88px; height: 88px; padding: 0 12px; border-radius: 16px; color: #fff; font-size: 48px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.12), var(--shadow); position: relative; transition: transform .2s, border-radius .4s; }
+  .block::before { content: ""; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); width: 30px; height: 12px; border-radius: 6px 6px 0 0; background: inherit; }
+  .block.heard { transform: translateY(-6px); }
+  .blocks.joined .block { border-radius: 0; transform: none; }
+  .blocks.joined .block:first-child { border-radius: 16px 0 0 16px; }
+  .blocks.joined .block:last-child { border-radius: 0 16px 16px 0; }
+  .block.lit { filter: brightness(1.12); transform: scale(1.08); }
+
+  /* 내 이름 글자 찾기 */
+  .target-card { background: #fff; border-radius: 20px; padding: 6px 26px; font-size: 52px; color: var(--pink-dark); box-shadow: var(--shadow); letter-spacing: 4px; }
+  .lslots { display: flex; gap: 10px; justify-content: center; }
+  .lslot { width: 74px; height: 74px; border-radius: 18px; border: 3px dashed var(--pink); background: #fff; display: grid; place-items: center; font-size: 42px; }
+  .lslot.filled { border: 3px solid var(--sun); background: #fffaf0; animation: pop-in .25s ease-out; }
+  .ltiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 100%; max-width: 360px; }
+  .ltile { aspect-ratio: 1; max-width: 100%; background: #fff; border-radius: 18px; box-shadow: var(--shadow); font-size: 42px; transition: transform .1s; }
+  .ltile:active { transform: scale(.92); }
+  .ltile.used { visibility: hidden; }
+
+  /* 자음 친구 */
+  .kcard { background: #fff; border-radius: 28px; box-shadow: var(--shadow); padding: 14px 28px; display: flex; align-items: center; gap: 16px; }
+  .kcard .pic { font-size: 84px; line-height: 1; }
+  .kcard .word { font-size: 42px; }
+
+  /* 글자 카드 구경 (자유 놀이) */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .lcard { aspect-ratio: 3 / 4; background: #fff; border-radius: 18px; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: transform .1s, background .2s; }
+  .lcard:active { transform: scale(.94); }
+  .lcard .l { font-size: 44px; line-height: 1; color: var(--pink-dark); }
+  .lcard .p { font-size: 28px; line-height: 1; }
+  .lcard.on { background: var(--sun); }
+  .free-say { text-align: center; margin-top: 12px; min-height: 40px; font-size: 26px; color: var(--pink-dark); }
+
+  /* ---------- 칭찬 ---------- */
+  .overlay { position: fixed; inset: 0; display: none; place-items: center; background: rgba(255,246,249,.75); backdrop-filter: blur(3px); z-index: 10; }
+  .overlay.on { display: grid; }
+  .cheer { text-align: center; animation: pop-in .35s ease-out; }
+  .cheer .doll { width: 190px; height: 190px; border-radius: 50%; margin: 0 auto; border: 8px solid #fff; box-shadow: var(--shadow); font-size: 160px; animation: jump .6s ease-in-out infinite alternate; }
+  .cheer .say { margin-top: 16px; font-size: 30px; color: var(--pink-dark); }
+  .cheer .big { font-size: 60px; line-height: 1.1; margin-top: 4px; }
+  @keyframes pop-in { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes jump { from { transform: translateY(0) rotate(-4deg); } to { transform: translateY(-22px) rotate(4deg); } }
+  .confetti { position: fixed; top: -40px; font-size: 30px; pointer-events: none; z-index: 11; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+
+  /* ---------- 단계 끝 / 스티커 / 쉬기 ---------- */
+  .center { text-align: center; justify-content: center; align-items: center; gap: 10px; }
+  .center h2 { font-size: 30px; margin: 6px 0 0; color: var(--pink-dark); font-weight: normal; }
+  .center p { margin: 0; font-size: 19px; color: var(--muted); }
+  .center .row { display: flex; gap: 12px; margin-top: 18px; flex-wrap: wrap; justify-content: center; }
+  .new-sticker { width: 170px; height: 170px; border-radius: 50%; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 100px; border: 6px dashed var(--sun); animation: spin-in .7s ease-out; }
+  @keyframes spin-in { from { transform: scale(0) rotate(-200deg); } to { transform: scale(1) rotate(0); } }
+  .mission { background: #fff; border-radius: 22px; box-shadow: var(--shadow); padding: 14px 18px; margin-top: 10px; width: 100%; text-align: left; }
+  .mission b { display: block; color: var(--pink-dark); font-weight: normal; font-size: 18px; margin-bottom: 4px; }
+  .mission span { font-size: 18px; line-height: 1.5; }
+  .mission small { display: block; color: var(--muted); font-size: 14px; margin-top: 8px; line-height: 1.5; }
+  .book { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 16px; }
+  .book div { aspect-ratio: 1; max-width: 100%; border-radius: 20px; background: #fff; box-shadow: var(--shadow); display: grid; place-items: center; font-size: 44px; }
+  .book div.empty { background: var(--bg2); box-shadow: none; color: var(--gray); font-size: 26px; border: 3px dashed var(--gray); }
+  .rest .doll { width: 200px; height: 200px; border-radius: 50%; border: 8px solid #fff; box-shadow: var(--shadow); font-size: 170px; filter: saturate(.7) brightness(.95); }
+  .rest .zzz { font-size: 44px; animation: bob 2s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01s !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<!-- 1. 설명 화면 (부모님용) -->
+<section class="screen" id="intro">
+  <div class="intro-head">
+    <div class="big-doll" aria-hidden="true">🧸</div>
+    <h1>인형이랑 한글 놀이</h1>
+    <p>아이의 애착인형과 함께<br>소리부터 차근차근 한글을 배워요.</p>
+  </div>
+  <div class="info">
+    <h2>처음에 준비해요</h2>
+    <ul>
+      <li>애착인형 사진 1~5장 찍기, 인형 이름 정하기</li>
+      <li>아이 이름과 가족을 부르는 말 쓰기 (엄마, 아빠…)</li>
+      <li>부모님 목소리 녹음하기 (이름, 칭찬, 응원)</li>
+    </ul>
+  </div>
+  <div class="info">
+    <h2>놀이는 4단계 + 자유 놀이예요</h2>
+    <div class="lv" id="introStages"></div>
+  </div>
+  <div class="info">
+    <h2>이렇게 배워요</h2>
+    <ul>
+      <li>이 나이에는 글자를 외우기보다 <b>소리에 귀 기울이기</b>가 읽기의 기초예요. 그래서 <b>소리 → 내 이름 → 글자</b> 순서로 놀아요.</li>
+      <li>맞히면 조금 어렵게, 두 번 틀리면 쉽게 <b>난이도가 저절로 바뀌어요.</b></li>
+      <li>틀리면 바로 답을 주지 않고 <b>응원 → 반짝 힌트 → 같이 하기</b> 순서로 도와줘요.</li>
+      <li>"똑똑해" 대신 <b>"끝까지 잘했어"</b>처럼 노력을 칭찬해요.</li>
+      <li>놀이가 끝나면 <b>화면 밖 미션</b>으로 생활 속에서 이어 가요.</li>
+    </ul>
+  </div>
+  <div class="info">
+    <h2>부모님께</h2>
+    <ul>
+      <li>옆에서 <b>같이 소리 내어 말해 주시면</b> 훨씬 잘 배워요.</li>
+      <li>하루 <b>10분</b>이 지나면 인형이 "졸려요" 하고 쉬어요. 2분 전에 미리 알려 줘요. (부모님 메뉴에서 끌 수 있어요)</li>
+      <li>처음 화면 아래 버튼을 <b>2초 꾹</b> 누르면 단계 고르기, 인형·이름 바꾸기, 다시 녹음을 할 수 있어요.</li>
+      <li>사진·이름·녹음은 <b>이 휴대폰에만</b> 저장되고 어디에도 올라가지 않아요.</li>
+      <li>브라우저 메뉴에서 <b>"홈 화면에 추가"</b>를 누르면 앱처럼 쓸 수 있어요.</li>
+    </ul>
+  </div>
+  <div class="bottom">
+    <button class="pill wide" id="introNext">인형 등록하기 ▶</button>
+  </div>
+</section>
+
+<!-- 2. 사진 찍기 -->
+<section class="screen" id="photos">
+  <div class="step-head">
+    <div class="step">1 / 4</div>
+    <h1>인형 사진을 찍어 주세요</h1>
+    <p>1장부터 5장까지 넣을 수 있어요.<br>여러 장이면 놀이 중에 번갈아 나와요.</p>
+  </div>
+  <div class="slots" id="slots"></div>
+  <input type="file" id="photoInput" accept="image/*" hidden>
+  <div class="notice" id="photoNotice"></div>
+  <div class="bottom">
+    <button class="pill wide" id="photosNext" disabled>다음 ▶</button>
+    <button class="link" id="photosSkip">사진 없이 하기</button>
+  </div>
+</section>
+
+<!-- 3. 인형 이름 -->
+<section class="screen" id="naming">
+  <div class="step-head">
+    <div class="step">2 / 4</div>
+    <h1>인형 이름이 뭐예요?</h1>
+    <p>아이가 부르는 이름 그대로 써 주세요.</p>
+  </div>
+  <div class="name-preview">
+    <div class="doll" id="namePhoto"></div>
+    <div class="say" id="nameSay"></div>
+  </div>
+  <input class="name-input" id="nameInput" type="text" maxlength="12" placeholder="예: 토토" autocomplete="off" enterkeyhint="done">
+  <div class="bottom">
+    <button class="pill wide" id="nameNext" disabled>다음 ▶</button>
+  </div>
+</section>
+
+<!-- 4. 아이 이름 · 가족 -->
+<section class="screen" id="family">
+  <div class="step-head">
+    <div class="step">3 / 4</div>
+    <h1>아이 이름을 알려 주세요</h1>
+    <p>"내 이름 글자 찾기" 놀이에 나와요.<br>한글로 1~4글자만 써 주세요.</p>
+  </div>
+  <div class="field-label">아이 이름 (평소 부르는 이름)</div>
+  <input class="name-input" id="childInput" type="text" maxlength="4" placeholder="예: 서준" autocomplete="off">
+  <div class="field-label">가족을 부르는 말 (빈칸은 괜찮아요)</div>
+  <div class="fam-row">
+    <input class="name-input fam" type="text" maxlength="4" placeholder="엄마" autocomplete="off">
+    <input class="name-input fam" type="text" maxlength="4" placeholder="아빠" autocomplete="off">
+    <input class="name-input fam" type="text" maxlength="4" placeholder="할머니" autocomplete="off">
+  </div>
+  <div class="notice" id="famNotice"></div>
+  <div class="bottom">
+    <button class="pill wide" id="famNext" disabled>다음 ▶</button>
+  </div>
+</section>
+
+<!-- 5. 녹음하기 -->
+<section class="screen" id="record">
+  <div class="step-head">
+    <div class="step">4 / 4</div>
+    <h1>목소리를 녹음해 주세요</h1>
+    <p>🔴을 누르고 말한 뒤 ⏹을 눌러요. (최대 5초)<br>안 해도 기본 목소리가 나와요.</p>
+  </div>
+  <div class="notice" id="recNotice"></div>
+  <div class="rec-list" id="recList"></div>
+  <div class="bottom">
+    <button class="pill wide" id="recNext">다 했어요 ▶</button>
+  </div>
+</section>
+
+<!-- 6. 처음 화면 (놀이 고르기) -->
+<section class="screen" id="home">
+  <div class="hero">
+    <button class="corner l" id="bookBtn" aria-label="스티커 모음책">📒</button>
+    <button class="corner r" id="helpBtn" aria-label="앱 설명 보기">?</button>
+    <button class="hero-photo doll" id="heroPhoto" aria-label="인사 듣기"></button>
+    <h1 id="homeTitle"></h1>
+    <p>놀이를 골라 볼까?</p>
+  </div>
+  <div class="stages" id="stages"></div>
+  <div class="parent">
+    <button class="hold-btn" id="parentHold"><span class="fill"></span>👩 부모님: 2초 동안 꾹 누르기</button>
+    <div class="parent-panel" id="parentPanel">
+      <button id="editDoll">인형 바꾸기</button>
+      <button id="editFamily">아이·가족 이름 바꾸기</button>
+      <button id="editRec">다시 녹음하기</button>
+      <button id="restToggle"></button>
+      <button id="openAll">모든 단계 열기</button>
+      <button id="resetAll">처음부터 다시</button>
+      <button id="closeParent">닫기</button>
+    </div>
+  </div>
+</section>
+
+<!-- 7. 놀이 화면 -->
+<section class="screen" id="game">
+  <div class="top">
+    <button class="round-btn" id="backBtn" aria-label="처음으로">🏠</button>
+    <div class="dots" id="dots"></div>
+    <button class="round-btn" id="sayBtn" aria-label="다시 듣기">🔊</button>
+  </div>
+  <div class="ask">
+    <div class="doll" id="askDoll"></div>
+    <div class="bubble" id="bubble"></div>
+  </div>
+  <div class="play" id="play"></div>
+  <div class="choices" id="choices"></div>
+</section>
+
+<!-- 8. 글자 카드 구경 (자유 놀이) -->
+<section class="screen" id="free">
+  <div class="top">
+    <button class="round-btn" id="freeBack" aria-label="처음으로">🏠</button>
+    <div style="flex:1;text-align:center;font-size:24px;color:var(--pink-dark)">글자 친구 카드</div>
+    <div style="width:52px"></div>
+  </div>
+  <div class="free-say" id="freeSay">마음대로 눌러 봐!</div>
+  <div class="cards" id="cards"></div>
+</section>
+
+<!-- 9. 단계 끝 화면 -->
+<section class="screen center" id="clear">
+  <div class="new-sticker" id="newSticker"></div>
+  <h2 id="clearTitle">다 했다!</h2>
+  <p id="clearSub"></p>
+  <div class="mission">
+    <b>🏡 화면 밖 미션</b>
+    <span id="missionText"></span>
+    <small id="parentQ"></small>
+  </div>
+  <div class="row">
+    <button class="icon-btn again" id="againBtn" aria-label="한 번 더">🔁</button>
+    <button class="icon-btn next" id="nextBtn" aria-label="다음 놀이">▶</button>
+    <button class="icon-btn home" id="homeBtn" aria-label="처음으로">🏠</button>
+  </div>
+</section>
+
+<!-- 10. 스티커 모음책 -->
+<section class="screen" id="stickers">
+  <div class="top">
+    <button class="round-btn" id="bookBack" aria-label="처음으로">🏠</button>
+    <div style="flex:1;text-align:center;font-size:24px;color:var(--pink-dark)">스티커 모음책</div>
+    <div style="width:52px"></div>
+  </div>
+  <p style="text-align:center;color:var(--muted);margin:12px 0 0" id="bookCount"></p>
+  <div class="book" id="book"></div>
+</section>
+
+<!-- 11. 쉬는 시간 -->
+<section class="screen center rest" id="rest">
+  <div class="zzz" aria-hidden="true">💤</div>
+  <div class="doll" id="restDoll"></div>
+  <h2 id="restTitle"></h2>
+  <p>오늘은 여기까지! 내일 또 만나요.</p>
+  <div class="bottom" style="margin-top:24px">
+    <button class="hold-btn" id="restHold"><span class="fill"></span>👩 부모님: 2초 꾹 누르면 더 놀 수 있어요</button>
+  </div>
+</section>
+
+<!-- 칭찬 -->
+<div class="overlay" id="overlay">
+  <div class="cheer">
+    <div class="doll" id="cheerDoll"></div>
+    <div class="say" id="cheerSay"></div>
+    <div class="big" id="cheerBig"></div>
+  </div>
+</div>
+
+<script>
+  // ==== 목소리 문장표 시작 (소리 이름 → 휴대폰 음성이 읽을 글) ====
+  // 자음 친구: 글자, 이름, 그 글자로 시작하는 낱말과 그림
+  const CONSONANTS = [
+    { ch: "ㄱ", name: "기역", word: "기린",   pic: "🦒" },
+    { ch: "ㄴ", name: "니은", word: "나비",   pic: "🦋" },
+    { ch: "ㄷ", name: "디귿", word: "다람쥐", pic: "🐿️" },
+    { ch: "ㄹ", name: "리을", word: "라면",   pic: "🍜" },
+    { ch: "ㅁ", name: "미음", word: "모자",   pic: "👒" },
+    { ch: "ㅂ", name: "비읍", word: "바나나", pic: "🍌" },
+    { ch: "ㅅ", name: "시옷", word: "사과",   pic: "🍎" },
+    { ch: "ㅇ", name: "이응", word: "오리",   pic: "🦆" },
+    { ch: "ㅈ", name: "지읒", word: "자동차", pic: "🚗" },
+    { ch: "ㅊ", name: "치읓", word: "치즈",   pic: "🧀" },
+    { ch: "ㅋ", name: "키읔", word: "코끼리", pic: "🐘" },
+    { ch: "ㅌ", name: "티읕", word: "토끼",   pic: "🐰" },
+    { ch: "ㅍ", name: "피읖", word: "포도",   pic: "🍇" },
+    { ch: "ㅎ", name: "히읗", word: "하마",   pic: "🦛" },
+  ];
+  // 박수 치기·블록 놀이에 쓰는 낱말 (1~4글자)
+  const WORDS = [
+    { w: "곰", pic: "🐻" }, { w: "별", pic: "⭐" }, { w: "해", pic: "☀️" }, { w: "달", pic: "🌙" },
+    { w: "꽃", pic: "🌸" }, { w: "공", pic: "⚽" }, { w: "귤", pic: "🍊" }, { w: "빵", pic: "🍞" },
+    { w: "아기", pic: "👶" }, { w: "오리", pic: "🦆" }, { w: "오이", pic: "🥒" }, { w: "사과", pic: "🍎" },
+    { w: "사자", pic: "🦁" }, { w: "토끼", pic: "🐰" }, { w: "포도", pic: "🍇" }, { w: "포크", pic: "🍴" },
+    { w: "우유", pic: "🥛" }, { w: "기차", pic: "🚂" }, { w: "기린", pic: "🦒" }, { w: "나비", pic: "🦋" },
+    { w: "모자", pic: "👒" }, { w: "하마", pic: "🦛" }, { w: "치즈", pic: "🧀" }, { w: "바지", pic: "👖" },
+    { w: "고래", pic: "🐳" }, { w: "우산", pic: "☂️" }, { w: "가방", pic: "🎒" }, { w: "시계", pic: "⏰" },
+    { w: "바나나", pic: "🍌" }, { w: "토마토", pic: "🍅" }, { w: "고구마", pic: "🍠" }, { w: "자동차", pic: "🚗" },
+    { w: "자전거", pic: "🚲" }, { w: "코끼리", pic: "🐘" }, { w: "비행기", pic: "✈️" }, { w: "거북이", pic: "🐢" },
+    { w: "원숭이", pic: "🐒" }, { w: "해바라기", pic: "🌻" }, { w: "고슴도치", pic: "🦔" }, { w: "무당벌레", pic: "🐞" },
+  ];
+  // 가족을 부르는 말 중 자주 쓰는 것 (목소리 파일을 미리 만들어 둬요)
+  const FAMILY_WORDS = ["엄마", "아빠", "할머니", "할아버지", "형", "누나", "오빠", "언니", "동생"];
+  // 이름 찾기에서 섞어 놓는 글자
+  const SYL_POOL = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하",
+                    "고", "노", "도", "로", "모", "보", "소", "오", "조", "호", "구", "누", "두", "루", "무", "부", "수", "우", "주", "후"];
+  const CLIPS = {
+    hello: "안녕! 같이 한글 놀이 하자!",
+    q_clap: "북을 쳐 봐! 몇 번 칠까?",
+    btn_clap: "다 쳤으면 초록색 동그라미를 눌러 줘!",
+    clap_less: "조금 더 쳐 볼까?",
+    clap_more: "너무 많이 쳤어. 다시 쳐 볼까?",
+    q_name: "글자를 순서대로 찾아 줘!",
+    q_block: "블록을 하나씩 눌러서 소리를 들어 봐!",
+    q_block2: "합치면 무엇이 될까?",
+    free: "글자 친구를 마음대로 눌러 봐!",
+    together: "같이 해 보자!",
+    soon: "조금 있으면 인형이 졸려요. 하나만 더 해 볼까?",
+    mission0: "엄마 아빠 이름을 박수 치며 불러 볼까?",
+    mission1: "집에서 내 이름 글자를 찾아볼까? 가방이나 책에 있을지도 몰라!",
+    mission2: "엄마 아빠랑 아로 시작하는 말을 찾아볼까?",
+    mission3: "엄마 아빠랑 손가락으로 기역 모양을 만들어 볼까?",
+    hint: "반짝이는 걸 봐!",
+    locked: "아직 잠겨 있어. 앞의 놀이를 먼저 해 볼까?",
+    clear: "우와, 다 했다!",
+    sticker: "스티커를 받았어!",
+    opened: "다음 놀이가 열렸어!",
+    sleepy: "졸려요. 내일 또 하자!",
+    praise0: "끝까지 잘했어!", praise1: "열심히 했구나!", praise2: "포기 안 했네, 최고야!",
+    cheer0: "괜찮아, 다시 해 보자!", cheer1: "거의 다 왔어!", cheer2: "한 번 더 해 볼까?",
+    btn_clear: "또 하고 싶으면 노란 버튼, 다음 놀이는 분홍 버튼을 눌러 줘!",
+    btn_home: "하고 싶은 놀이 그림을 눌러 줘!",
+    btn_speaker: "스피커를 누르면 다시 들을 수 있어!",
+  };
+  CONSONANTS.forEach((c, i) => {
+    CLIPS["kq" + i] = `${c.name}을 찾아 줘!`;                   // 기역을 찾아 줘!
+    CLIPS["kc" + i] = `${c.name}! ${c.word}의 ${c.word[0]}!`;   // 기역! 기린의 기!
+  });
+  WORDS.forEach(({ w }) => {
+    CLIPS["w_" + w] = w + "!";                                  // 사과!
+    if (w.length > 1) CLIPS["cs_" + w] = [...w].join("! ") + "!"; // 사! 과!
+  });
+  FAMILY_WORDS.forEach(w => { CLIPS["w_" + w] = w + "!"; });
+  const sylSet = new Set(SYL_POOL);
+  [...WORDS.map(o => o.w), ...FAMILY_WORDS].forEach(w => [...w].forEach(s => sylSet.add(s)));
+  sylSet.forEach(s => { CLIPS["y_" + s] = s + "!"; });         // 사!
+  // ==== 목소리 문장표 끝 ====
+
+  // ---------- 설정 ----------
+  const GOAL = 5;              // 한 단계에서 맞혀야 하는 문제 수
+  const MAX_PHOTOS = 5;
+  const MAX_REC_SEC = 5;
+  const REST_MIN = 10;         // 하루 놀이 시간(분)
+  const WARN_MIN = 2;          // 쉬기 몇 분 전에 미리 알려 줄지
+  const PRAISE_TEXT = ["끝까지 잘했어!", "열심히 했구나!", "포기 안 했네, 최고야!"];
+  const CHEER_TEXT = ["괜찮아, 다시 해 보자!", "거의 다 왔어!", "한 번 더 해 볼까?"];
+  const STICKERS = ["🦒", "🦋", "🐿️", "🍜", "👒", "🍌", "🍎", "🦆", "🚗", "🧀", "🐘", "🐰", "🍇", "🦛", "🐻", "🌸", "🚂", "🐳", "🌻", "🐞"];
+  const STAGES = [
+    { ico: "🥁", name: "박수로 말 나누기", sub: "소리 덩어리 세기",  color: "var(--pink)",  play: () => qClap(),
+      mission: "mission0", parentQ: "\"오늘 박수 친 말 중에 뭐가 제일 재미있었어?\"" },
+    { ico: "📛", name: "내 이름 글자 찾기", sub: "우리 가족 글자",  color: "var(--sky)",   play: () => qName(),
+      mission: "mission1", parentQ: "\"누구 이름 글자를 찾았어? 또 어디서 봤어?\"" },
+    { ico: "🧱", name: "말 만들기 블록",   sub: "소리 합치기",      color: "var(--mint)",  play: () => qBlock(),
+      mission: "mission2", parentQ: "\"블록으로 어떤 말을 만들었어?\"" },
+    { ico: "🔤", name: "자음 친구 찾기",   sub: "ㄱ~ㅎ · 글자와 소리", color: "var(--lilac)", play: () => qConsonant(),
+      mission: "mission3", parentQ: "\"오늘 만난 글자 친구 중에 누가 제일 좋았어?\"" },
+  ];
+
+  // ---------- 도우미 ----------
+  const $ = id => document.getElementById(id);
+  const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const pick = arr => arr[rand(0, arr.length - 1)];
+  const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = rand(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+  function show(id) {
+    if (id !== "game" && id !== "free") pauseClock();
+    document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+    window.scrollTo(0, 0);
+  }
+  // 받침이 있으면 true (영어 이름 등은 받침 없음으로 봄)
+  function hasBatchim(word) {
+    const c = (word || "").charCodeAt(word.length - 1) - 0xac00;
+    return c >= 0 && c <= 11171 && c % 28 !== 0;
+  }
+  const josa = (word, withB, withoutB) => word + (hasBatchim(word) ? withB : withoutB);
+  const syls = w => [...w];
+  const isHangulWord = w => /^[가-힣]{1,4}$/.test(w);
+
+  // ---------- 저장 (이 휴대폰에만) ----------
+  const KEY = "doll-hangul-v1";
+  let settings = { setup: false, name: "", child: "", family: ["엄마", "아빠"], unlocked: 1, stars: [], stickers: [], restOn: true, playDate: "", playedMs: 0 };
+  try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) {}
+  if (settings.stars.length !== STAGES.length) { settings.stars = new Array(STAGES.length).fill(0); settings.unlocked = 1; }
+  function saveSettings() { try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) {} }
+
+  // 사진·녹음은 크기가 커서 IndexedDB(브라우저 안의 작은 저장소)에 보관
+  const store = (() => {
+    let dbp = null;
+    function open() {
+      return dbp || (dbp = new Promise((res, rej) => {
+        const r = indexedDB.open("doll-hangul", 1);
+        r.onupgradeneeded = () => r.result.createObjectStore("blobs");
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      }));
+    }
+    async function run(mode, fn) {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const t = db.transaction("blobs", mode);
+        const req = fn(t.objectStore("blobs"));
+        t.oncomplete = () => res(req.result);
+        t.onerror = () => rej(t.error);
+      });
+    }
+    return {
+      get: k => run("readonly", s => s.get(k)).catch(() => null),
+      set: (k, v) => run("readwrite", s => s.put(v, k)).catch(() => null),
+      del: k => run("readwrite", s => s.delete(k)).catch(() => null),
+    };
+  })();
+
+  // ---------- 인형 사진 ----------
+  let photos = new Array(MAX_PHOTOS).fill(null); // { blob, url }
+  const photoUrls = () => photos.filter(Boolean).map(p => p.url);
+  // 요소에 인형 얼굴 입히기 (i번째 사진, 없으면 곰 인형)
+  function paintDoll(node, i) {
+    const urls = photoUrls();
+    node.classList.add("doll");
+    if (!urls.length) { node.classList.add("noimg"); node.style.backgroundImage = ""; return; }
+    node.classList.remove("noimg");
+    node.style.backgroundImage = `url("${i == null ? pick(urls) : urls[i % urls.length]}")`;
+  }
+  // 사진을 작게 줄여서(긴 쪽 600px) 저장
+  async function shrinkPhoto(file) {
+    const url = URL.createObjectURL(file);
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      const s = Math.min(1, 600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * s);
+      c.height = Math.round(img.naturalHeight * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      return await new Promise(r => c.toBlob(r, "image/jpeg", 0.85));
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  // ---------- 소리 ----------
+  // 모든 안내 말은 휴대폰에 들어 있는 음성(TTS: 글자를 기계 목소리로 읽기)으로 읽어요.
+  // 부모님 녹음만 Web Audio(브라우저의 소리 재생 장치)로 틀어요.
+  let actx = null;
+  function audio() {
+    if (!actx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  document.addEventListener("pointerdown", () => audio(), { capture: true });
+
+  const bufCache = new Map();
+  const recBlobs = {}; // 부모님 녹음: name, praise0~2, cheer0~2
+  // 부모님 녹음("rec:praise0" 등)을 소리 조각으로 바꿔 두기
+  function loadBuf(key) {
+    if (bufCache.has(key)) return bufCache.get(key);
+    const p = (async () => {
+      const ctx = audio();
+      const b = recBlobs[key.slice(4)];
+      if (!ctx || !b) return null;
+      const data = await b.arrayBuffer();
+      return await new Promise((res, rej) => ctx.decodeAudioData(data, res, rej));
+    })().catch(() => null);
+    bufCache.set(key, p);
+    return p;
+  }
+
+  // 브라우저 음성: 한국어 목소리 고르기
+  const hasTTS = "speechSynthesis" in window;
+  let koVoice = null;
+  function pickVoice() {
+    const vs = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang));
+    // 안드로이드는 구글 음성, 아이폰은 유나 음성을 먼저 골라요
+    koVoice = vs.find(v => /Google|Yuna|유나|Heami|SunHi|InJoon/i.test(v.name)) || vs[0] || null;
+  }
+  if (hasTTS) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+  function speak(text) {
+    return new Promise(res => {
+      if (!hasTTS || !text) return res();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "ko-KR";
+      if (koVoice) u.voice = koVoice;
+      u.rate = 0.9; u.pitch = 1.15;
+      let done = false;
+      const fin = () => { if (!done) { done = true; res(); } };
+      u.onend = fin; u.onerror = fin;
+      setTimeout(fin, 1500 + text.length * 350);
+      speechSynthesis.speak(u);
+    });
+  }
+  // 소리 이름 → 읽을 글 ("t:서준"은 그 글을 그대로 읽어요)
+  const clipText = k => k.startsWith("t:") ? k.slice(2) : CLIPS[k] || null;
+  const wordKey = w => CLIPS["w_" + w] ? "w_" + w : "t:" + w;
+  const sylKey = s => CLIPS["y_" + s] ? "y_" + s : "t:" + s;
+
+  let sayToken = 0, playing = null;
+  function stopSay() {
+    sayToken++;
+    if (playing) { try { playing.stop(); } catch (e) {} playing = null; }
+    if (hasTTS) speechSynthesis.cancel();
+  }
+  // 소리 조각들을 차례로 틀기 (예: ["rec:name", "q_clap"])
+  async function say(keys) {
+    stopSay();
+    const my = sayToken;
+    const ctx = audio();
+    for (const k of keys.filter(Boolean)) {
+      const buf = k.startsWith("rec:") && ctx ? await loadBuf(k) : null;
+      if (my !== sayToken) return;
+      if (buf) {
+        await new Promise(res => {
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.connect(ctx.destination);
+          src.onended = res;
+          // 소리 장치가 멈춰 있어도 놀이가 멈추지 않게, 길이만큼 지나면 다음으로
+          setTimeout(res, buf.duration * 1000 + 400);
+          playing = src;
+          src.start();
+        });
+      } else if (!k.startsWith("rec:")) {
+        await speak(clipText(k));
+      }
+      if (my !== sayToken) return;
+      await sleep(90);
+    }
+    playing = null;
+  }
+
+  // 부모님 녹음이 있으면 그걸, 없으면 기본 목소리
+  const nameKey = () => recBlobs.name ? "rec:name" : null;
+  function praiseKey() {
+    const mine = [0, 1, 2].filter(i => recBlobs["praise" + i]);
+    return mine.length ? "rec:praise" + pick(mine) : "praise" + rand(0, 2);
+  }
+  function cheerKey() {
+    const mine = [0, 1, 2].filter(i => recBlobs["cheer" + i]);
+    return mine.length ? "rec:cheer" + pick(mine) : "cheer" + rand(0, 2);
+  }
+
+  // 효과음
+  function beep(freqs, dur = 0.12, type = "sine") {
+    const ctx = audio();
+    if (!ctx) return;
+    freqs.forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = type; o.frequency.value = f;
+      const t = ctx.currentTime + i * dur;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(ctx.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    });
+  }
+  // 북 "둥" 소리: 낮은 음을 빠르게 떨어뜨려요
+  function drumHit() {
+    const ctx = audio();
+    if (!ctx) return;
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+    o.type = "sine";
+    o.frequency.setValueAtTime(170, t);
+    o.frequency.exponentialRampToValueAtTime(55, t + 0.25);
+    g.gain.setValueAtTime(0.7, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g).connect(ctx.destination);
+    o.start(t); o.stop(t + 0.32);
+  }
+  const sfx = {
+    tap:   () => beep([660], 0.08),
+    drum:  () => drumHit(),
+    right: () => beep([523, 659, 784, 1047], 0.1),
+    wrong: () => beep([300, 240], 0.14, "triangle"),
+  };
+
+  // 2초 꾹 누르는 버튼 (부모님용)
+  function holdButton(btn, onDone) {
+    let t = null;
+    btn.addEventListener("pointerdown", e => {
+      e.preventDefault();
+      btn.classList.add("holding");
+      t = setTimeout(() => { btn.classList.remove("holding"); onDone(); }, 2000);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(ev => btn.addEventListener(ev, () => { clearTimeout(t); btn.classList.remove("holding"); }));
+    btn.addEventListener("contextmenu", e => e.preventDefault());
+  }
+
+  // ---------- 1. 설명 화면 ----------
+  STAGES.forEach((s, i) => {
+    const lv = $("introStages");
+    lv.appendChild(el("b", "", i + 1)).style.background = s.color;
+    lv.appendChild(el("span", "", `${s.ico} ${s.name} <small>${s.sub}</small>`));
+  });
+  $("introStages").appendChild(el("b", "", "✿")).style.background = "var(--sun)";
+  $("introStages").appendChild(el("span", "", `🃏 글자 친구 카드 <small>자유 놀이 · 언제나 열려 있어요</small>`));
+  $("introNext").onclick = () => {
+    if (settings.setup) { renderHome(); show("home"); }
+    else { renderSlots(); show("photos"); }
+  };
+  $("helpBtn").onclick = () => { $("introNext").textContent = "닫기"; show("intro"); };
+
+  // ---------- 2. 사진 찍기 ----------
+  let slotTarget = 0, editingOne = false; // editingOne: 부모 메뉴에서 한 가지만 고칠 때
+  function renderSlots() {
+    const box = $("slots");
+    box.innerHTML = "";
+    for (let i = 0; i < MAX_PHOTOS; i++) {
+      const p = photos[i];
+      const s = el("button", "slot" + (p ? " filled" : ""));
+      if (p) {
+        s.style.backgroundImage = `url("${p.url}")`;
+        s.setAttribute("aria-label", `사진 ${i + 1} 바꾸기`);
+        const d = el("span", "del", "✕");
+        d.setAttribute("role", "button");
+        d.setAttribute("aria-label", `사진 ${i + 1} 지우기`);
+        d.onclick = async e => {
+          e.stopPropagation();
+          URL.revokeObjectURL(p.url);
+          photos[i] = null;
+          await store.del("photo" + i);
+          renderSlots();
+        };
+        s.appendChild(d);
+      } else {
+        s.innerHTML = `<span><span class="plus">＋</span>사진 ${i + 1}</span>`;
+      }
+      s.onclick = () => { slotTarget = i; $("photoInput").click(); };
+      box.appendChild(s);
+    }
+    $("photosNext").disabled = !photoUrls().length;
+  }
+  $("photoInput").onchange = async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+    $("slots").children[slotTarget].classList.add("busy");
+    try {
+      const blob = await shrinkPhoto(file);
+      if (photos[slotTarget]) URL.revokeObjectURL(photos[slotTarget].url);
+      photos[slotTarget] = { blob, url: URL.createObjectURL(blob) };
+      await store.set("photo" + slotTarget, blob);
+      $("photoNotice").textContent = "";
+    } catch (err) {
+      $("photoNotice").textContent = "사진을 불러오지 못했어요. 다른 사진으로 다시 해 주세요.";
+    }
+    renderSlots();
+  };
+  $("photosNext").onclick = () => goNaming();
+  $("photosSkip").onclick = () => goNaming();
+
+  // ---------- 3. 인형 이름 ----------
+  function goNaming() {
+    paintDoll($("namePhoto"), 0);
+    $("nameInput").value = settings.name || "";
+    updateNamePreview();
+    show("naming");
+  }
+  function updateNamePreview() {
+    const n = $("nameInput").value.trim();
+    $("nameSay").textContent = n ? `${josa(n, "이랑", "랑")} 한글 놀이!` : "";
+    $("nameNext").disabled = !n;
+  }
+  $("nameInput").addEventListener("input", updateNamePreview);
+  $("nameInput").addEventListener("keydown", e => { if (e.key === "Enter" && !$("nameNext").disabled) $("nameNext").click(); });
+  $("nameNext").onclick = () => {
+    settings.name = $("nameInput").value.trim();
+    saveSettings();
+    $("nameInput").blur();
+    if (editingOne) { editingOne = false; renderHome(); show("home"); } else goFamily();
+  };
+
+  // ---------- 4. 아이 이름 · 가족 ----------
+  const famInputs = [...document.querySelectorAll("#family .fam")];
+  function goFamily() {
+    $("childInput").value = settings.child || "";
+    famInputs.forEach((f, i) => { f.value = settings.family[i] || ""; });
+    checkFamily();
+    show("family");
+  }
+  function checkFamily() {
+    const c = $("childInput").value.trim();
+    const fam = famInputs.map(f => f.value.trim());
+    const bad = [c, ...fam].filter(w => w && !isHangulWord(w));
+    $("famNotice").textContent = bad.length ? `"${bad[0]}" — 한글 1~4글자로만 써 주세요. (띄어쓰기, 영어, 숫자는 안 돼요)` : "";
+    $("famNext").disabled = !isHangulWord(c) || bad.length > 0;
+  }
+  [$("childInput"), ...famInputs].forEach(f => f.addEventListener("input", checkFamily));
+  $("famNext").onclick = () => {
+    settings.child = $("childInput").value.trim();
+    settings.family = famInputs.map(f => f.value.trim()).filter(Boolean);
+    saveSettings();
+    if (editingOne) { editingOne = false; renderHome(); show("home"); } else goRecord();
+  };
+
+  // ---------- 5. 녹음하기 ----------
+  function recItems() {
+    const n = settings.name || "인형";
+    return [
+      { group: "인형 이름 부르기", key: "name", ex: josa(n, "아~", "야~"), hint: "문제를 낼 때 나와요" },
+      ...PRAISE_TEXT.map((t, i) => ({ group: i === 0 ? "칭찬 (맞혔을 때)" : null, key: "praise" + i, ex: t, hint: `칭찬 ${i + 1}` })),
+      ...CHEER_TEXT.map((t, i) => ({ group: i === 0 ? "응원 (틀렸을 때)" : null, key: "cheer" + i, ex: t, hint: `응원 ${i + 1}` })),
+    ];
+  }
+  let recorder = null, recStream = null, recKey = null, recTimer = null;
+
+  function goRecord() {
+    let msg = "";
+    if (!navigator.mediaDevices || !window.MediaRecorder) {
+      msg = /KAKAOTALK/i.test(navigator.userAgent)
+        ? "카카오톡 안에서는 녹음이 안 될 수 있어요. 오른쪽 위 메뉴에서 '다른 브라우저로 열기'를 눌러 크롬이나 사파리에서 열어 주세요."
+        : "이 브라우저에서는 녹음이 안 돼요. 크롬이나 사파리에서 열어 주세요.";
+    } else if (!window.isSecureContext) {
+      msg = "녹음은 https 주소에서만 돼요.";
+    }
+    $("recNotice").textContent = msg;
+    renderRec();
+    show("record");
+  }
+
+  function renderRec() {
+    const box = $("recList");
+    box.innerHTML = "";
+    recItems().forEach(it => {
+      if (it.group) box.appendChild(el("div", "rec-group", it.group));
+      const has = !!recBlobs[it.key];
+      const isRec = recKey === it.key;
+      const row = el("div", "rec" + (isRec ? " recording" : ""));
+      const ex = el("div", "ex");
+      ex.textContent = `"${it.ex}"`;
+      const small = el("small");
+      small.textContent = isRec ? "녹음 중… 다 말하면 ⏹" : has ? "✔ 녹음했어요" : it.hint;
+      if (has && !isRec) small.className = "done-mark";
+      ex.appendChild(small);
+      const btns = el("div", "btns");
+      const r = el("button", "r", isRec ? "⏹" : "●");
+      r.setAttribute("aria-label", isRec ? "녹음 멈추기" : "녹음하기");
+      r.disabled = !!recKey && !isRec;
+      r.onclick = () => isRec ? stopRec() : startRec(it.key);
+      btns.appendChild(r);
+      if (has && !isRec) {
+        const p = el("button", "", "▶");
+        p.setAttribute("aria-label", "들어 보기");
+        p.onclick = () => say(["rec:" + it.key]);
+        const d = el("button", "", "🗑");
+        d.setAttribute("aria-label", "지우기");
+        d.onclick = async () => {
+          delete recBlobs[it.key];
+          bufCache.delete("rec:" + it.key);
+          await store.del("rec:" + it.key);
+          renderRec();
+        };
+        btns.append(p, d);
+      }
+      row.append(ex, btns);
+      box.appendChild(row);
+    });
+  }
+
+  async function startRec(key) {
+    stopSay();
+    try {
+      recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      $("recNotice").textContent = err && err.name === "NotAllowedError"
+        ? "마이크 사용이 막혀 있어요. 주소창 옆 설정에서 마이크를 '허용'으로 바꿔 주세요."
+        : "마이크를 켜지 못했어요. 크롬이나 사파리에서 다시 해 주세요.";
+      return;
+    }
+    const type = ["audio/webm;codecs=opus", "audio/mp4", "audio/webm"].find(t => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t));
+    recorder = new MediaRecorder(recStream, type ? { mimeType: type } : undefined);
+    const chunks = [];
+    recorder.ondataavailable = e => e.data && e.data.size && chunks.push(e.data);
+    recorder.onstop = async () => {
+      recStream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(chunks, { type: recorder.mimeType || type || "audio/webm" });
+      const k = recKey;
+      recKey = null; recorder = null;
+      clearTimeout(recTimer);
+      if (blob.size > 0) {
+        recBlobs[k] = blob;
+        bufCache.delete("rec:" + k);
+        await store.set("rec:" + k, blob);
+        renderRec();
+        say(["rec:" + k]); // 바로 들려주기
+      } else {
+        renderRec();
+      }
+    };
+    recKey = key;
+    recorder.start();
+    $("recNotice").textContent = "";
+    renderRec();
+    recTimer = setTimeout(stopRec, MAX_REC_SEC * 1000);
+  }
+  function stopRec() {
+    clearTimeout(recTimer);
+    if (recorder && recorder.state !== "inactive") recorder.stop();
+  }
+  $("recNext").onclick = () => {
+    stopRec();
+    settings.setup = true;
+    saveSettings();
+    renderHome();
+    show("home");
+  };
+
+  // ---------- 6. 처음 화면 ----------
+  let parentMode = false;
+  const dollName = () => settings.name || "인형";
+  function renderHome() {
+    $("introNext").textContent = "인형 등록하기 ▶";
+    paintDoll($("heroPhoto"));
+    $("homeTitle").textContent = `${josa(dollName(), "이랑", "랑")} 한글 놀이`;
+    $("restToggle").textContent = `10분 쉬기: ${settings.restOn ? "켜짐" : "꺼짐"}`;
+    const box = $("stages");
+    box.innerHTML = "";
+    STAGES.forEach((s, i) => {
+      const open = parentMode || i < settings.unlocked;
+      const b = el("button", "tile" + (open ? "" : " locked"));
+      const stars = settings.stars[i] || 0;
+      b.innerHTML = `
+        <span class="no" style="background:${s.color}">${open ? i + 1 : "🔒"}</span>
+        <span class="stars">${stars ? "⭐".repeat(Math.min(stars, 3)) : ""}</span>
+        <span class="ico">${s.ico}</span>
+        <b>${s.name}</b><small>${s.sub}</small>`;
+      b.onclick = () => {
+        if (!open) { sfx.wrong(); say(["locked"]); return; }
+        sfx.tap();
+        startStage(i);
+      };
+      box.appendChild(b);
+    });
+    // 자유 놀이: 정답 없이 마음대로 (언제나 열려 있어요)
+    const f = el("button", "tile wide", `<span class="ico">🃏</span><span class="txt"><b>글자 친구 카드</b><small>자유 놀이 · 마음대로 눌러 봐요</small></span>`);
+    f.onclick = () => { sfx.tap(); goFree(); };
+    box.appendChild(f);
+  }
+  $("heroPhoto").onclick = () => { sfx.tap(); paintDoll($("heroPhoto")); say([nameKey(), "hello"]); };
+
+  holdButton($("parentHold"), () => {
+    parentMode = true;
+    $("parentPanel").classList.add("on");
+    $("parentHold").style.display = "none";
+    renderHome();
+  });
+  function closeParent() {
+    parentMode = false;
+    $("parentPanel").classList.remove("on");
+    $("parentHold").style.display = "";
+    renderHome();
+  }
+  $("editDoll").onclick = () => { closeParent(); editingOne = false; renderSlots(); show("photos"); };
+  $("editFamily").onclick = () => { closeParent(); editingOne = true; goFamily(); };
+  $("editRec").onclick = () => { closeParent(); goRecord(); };
+  $("restToggle").onclick = () => { settings.restOn = !settings.restOn; saveSettings(); renderHome(); };
+  $("openAll").onclick = () => { settings.unlocked = STAGES.length; saveSettings(); closeParent(); };
+  $("resetAll").onclick = () => {
+    const b = $("resetAll");
+    if (!b.dataset.sure) {
+      b.dataset.sure = "1";
+      b.textContent = "정말요? 한 번 더 누르기";
+      setTimeout(() => { delete b.dataset.sure; b.textContent = "처음부터 다시"; }, 3000);
+      return;
+    }
+    delete b.dataset.sure;
+    b.textContent = "처음부터 다시";
+    settings.unlocked = 1; settings.stars = new Array(STAGES.length).fill(0); settings.stickers = []; saveSettings();
+    closeParent();
+  };
+  $("closeParent").onclick = closeParent;
+
+  // ---------- 스티커 모음책 ----------
+  $("bookBtn").onclick = () => {
+    const book = $("book");
+    book.innerHTML = "";
+    STICKERS.forEach(s => {
+      const have = settings.stickers.includes(s);
+      book.appendChild(el("div", have ? "" : "empty", have ? s : "?"));
+    });
+    $("bookCount").textContent = `${settings.stickers.length} / ${STICKERS.length}장 모았어요`;
+    show("stickers");
+  };
+  $("bookBack").onclick = () => { renderHome(); show("home"); say(["btn_home"]); };
+
+  // ---------- 10분 쉬기 ----------
+  let clockStart = 0;
+  const today = () => new Date().toDateString();
+  function startClock() {
+    if (settings.playDate !== today()) { settings.playDate = today(); settings.playedMs = 0; settings.warned = false; }
+    clockStart = Date.now();
+  }
+  function pauseClock() {
+    if (!clockStart) return;
+    settings.playedMs += Date.now() - clockStart;
+    clockStart = 0;
+    saveSettings();
+  }
+  function playedMs() {
+    return settings.playDate === today() ? settings.playedMs + (clockStart ? Date.now() - clockStart : 0) : 0;
+  }
+  const tired = () => settings.restOn && playedMs() >= REST_MIN * 60000;
+  // 끝나기 2분 전에 한 번만 미리 알려 주기
+  function warnSoon() {
+    if (!settings.restOn || settings.warned || playedMs() < (REST_MIN - WARN_MIN) * 60000) return false;
+    settings.warned = true;
+    saveSettings();
+    return true;
+  }
+  function goRest() {
+    show("rest");
+    paintDoll($("restDoll"));
+    $("restTitle").textContent = `${josa(dollName(), "이", "가")} 졸려요`;
+    say([nameKey(), "sleepy"]);
+  }
+  holdButton($("restHold"), () => {
+    settings.playedMs = 0; settings.warned = false; saveSettings();
+    renderHome(); show("home");
+  });
+
+  // ---------- 7. 놀이 (공통) ----------
+  let stage = 0, score = 0, current = null, busy = false, lastAnswer = null;
+  // 단계별 난이도 0~2: 한 번에 맞히면 올라가고, 두 번 넘게 틀리면 내려가요 (이번에 켜 있는 동안만 기억)
+  const levels = STAGES.map(() => 0);
+
+  function startStage(i) {
+    stage = i; score = 0; lastAnswer = null;
+    if (tired()) { goRest(); return; }
+    show("game");
+    startClock();
+    nextQuestion();
+  }
+  function renderDots() {
+    const d = $("dots");
+    d.innerHTML = "";
+    for (let i = 0; i < GOAL; i++) d.appendChild(el("i", i < score ? "done" : ""));
+  }
+  function ask(text, keys) {
+    $("bubble").textContent = text;
+    current.keys = keys;
+    const soon = current.soon;
+    say(soon ? ["soon", ...keys] : keys).then(armIdle);
+  }
+
+  // 8초 동안 아무것도 안 누르면 "스피커를 누르면 다시 들을 수 있어!" (문제마다 한 번만)
+  let idleT = null;
+  function armIdle() {
+    clearTimeout(idleT);
+    const q = current;
+    if (!q || q.idleDone) return;
+    idleT = setTimeout(() => {
+      if (current !== q || busy || !$("game").classList.contains("on")) return;
+      q.idleDone = true;
+      $("sayBtn").classList.add("glow");
+      setTimeout(() => $("sayBtn").classList.remove("glow"), 3000);
+      say(["btn_speaker"]);
+    }, 8000);
+  }
+  $("game").addEventListener("pointerdown", () => { if (idleT) armIdle(); });
+  function pickAnswer(fn) {
+    let a, tries = 0;
+    do { a = fn(); } while (a === lastAnswer && ++tries < 20);
+    lastAnswer = a;
+    return a;
+  }
+  function nextQuestion() {
+    if (tired()) { goRest(); return; }
+    busy = false;
+    renderDots();
+    paintDoll($("askDoll"));
+    $("play").innerHTML = "";
+    $("choices").innerHTML = "";
+    $("choices").style.display = "";
+    $("choices").style.gridTemplateColumns = "";
+    current = { misses: 0, soon: warnSoon() };
+    STAGES[stage].play();
+  }
+
+  // 틀렸을 때: 응원 → (2번째) 반짝 힌트 → (3번째) 같이 하기
+  function missed(firstKeys) {
+    current.misses++;
+    sfx.wrong();
+    if (current.misses >= 3 && current.together) { current.together(); return; }
+    if (current.misses >= 2 && current.glow) {
+      const g = current.glow();
+      if (g) g.classList.add("glow");
+      say([cheerKey(), "hint"]);
+      return;
+    }
+    say(firstKeys || [cheerKey()]);
+  }
+
+  // 보기 버튼: items = [{ v: 값, label: 보이는 글 }]
+  function choiceButtons(items, cls = "") {
+    const box = $("choices");
+    box.style.gridTemplateColumns = `repeat(${items.length}, 1fr)`;
+    items.forEach(({ v, label }) => {
+      const b = el("button", "choice " + cls, label);
+      b.dataset.v = v;
+      b.onclick = () => {
+        if (busy || b.classList.contains("wrong")) return;
+        if (v === current.answer) { b.classList.add("right"); correct(); }
+        else { b.classList.add("wrong"); missed(); }
+      };
+      box.appendChild(b);
+    });
+    current.glow = current.glow || (() => box.querySelector(`[data-v="${current.answer}"]`));
+  }
+
+  async function correct() {
+    busy = true;
+    stopSay();
+    if (current.onRight) current.onRight(); // 놀이별 정답 모습 (선물 상자 열기 등)
+    score++;
+    // 난이도 조절
+    if (current.misses === 0) levels[stage] = Math.min(2, levels[stage] + 1);
+    else if (current.misses >= 2) levels[stage] = Math.max(0, levels[stage] - 1);
+    renderDots();
+    sfx.right();
+    const pk = praiseKey();
+    $("cheerSay").textContent = PRAISE_TEXT[+pk.slice(-1)];
+    $("cheerBig").textContent = current.show != null ? current.show : current.answer;
+    paintDoll($("cheerDoll"));
+    $("overlay").classList.add("on");
+    confetti();
+    const started = Date.now();
+    await sleep(350);
+    await say([pk, current.answerKey]);
+    await sleep(Math.max(300, 2200 - (Date.now() - started)));
+    $("overlay").classList.remove("on");
+    if (score >= GOAL) finishStage(); else nextQuestion();
+  }
+
+  function confetti() {
+    const marks = ["⭐", "🌟", "💖", "🎈", "✨"];
+    for (let i = 0; i < 16; i++) {
+      const c = el("div", "confetti", marks[i % marks.length]);
+      c.style.left = rand(0, 95) + "vw";
+      c.style.animationDuration = (1.4 + Math.random() * 1.2) + "s";
+      c.style.animationDelay = (Math.random() * 0.3) + "s";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 3000);
+    }
+  }
+
+  function finishStage() {
+    settings.stars[stage] = (settings.stars[stage] || 0) + 1;
+    const opened = stage + 1 < STAGES.length && settings.unlocked < stage + 2;
+    if (opened) settings.unlocked = stage + 2;
+    // 아직 없는 스티커 하나 받기
+    const left = STICKERS.filter(s => !settings.stickers.includes(s));
+    const got = left.length ? pick(left) : null;
+    if (got) settings.stickers.push(got);
+    saveSettings();
+    show("clear");
+    const s = STAGES[stage];
+    $("newSticker").textContent = got || "⭐";
+    $("newSticker").style.animation = "none"; void $("newSticker").offsetWidth; $("newSticker").style.animation = "";
+    $("clearTitle").textContent = `${s.name} 다 했다!`;
+    $("clearSub").textContent = (got ? "새 스티커를 받았어요! " : "스티커를 모두 모았어요! ") + (opened ? `${stage + 2}단계가 열렸어요 🎉` : "");
+    $("missionText").textContent = CLIPS[s.mission];
+    $("parentQ").textContent = `👩 부모님: 이렇게 물어봐 주세요 — ${s.parentQ}`;
+    $("nextBtn").style.display = stage === STAGES.length - 1 ? "none" : "";
+    say(["clear", got ? "sticker" : null, opened ? "opened" : null, s.mission, stage === STAGES.length - 1 ? null : "btn_clear"]);
+    confetti();
+  }
+
+  // 그림 + 낱말 카드 (글자마다 따로 반짝일 수 있게)
+  function wordCard(o) {
+    const card = el("div", "word-card");
+    card.appendChild(el("div", "pic", o.pic));
+    const word = el("div", "word");
+    syls(o.w).forEach(s => word.appendChild(el("span", "syl", s)));
+    card.appendChild(word);
+    return { card, sylEls: [...word.children] };
+  }
+  const wordsByLen = (a, b) => WORDS.filter(o => o.w.length >= a && o.w.length <= b);
+
+  // ---------- 1단계: 박수로 말 나누기 (음절 세기) ----------
+  function qClap() {
+    const lv = levels[stage];
+    const pool = lv === 0 ? wordsByLen(1, 2) : lv === 1 ? wordsByLen(1, 3) : wordsByLen(2, 4);
+    const o = pickAnswer(() => pick(pool));
+    const n = o.w.length;
+    Object.assign(current, { answer: n, show: `${o.pic} ${o.w}`, answerKey: n > 1 ? "cs_" + o.w : "w_" + o.w });
+    $("choices").style.display = "none";
+    const { card, sylEls } = wordCard(o);
+    const beats = el("div", "beats");
+    let count = 0;
+    function renderBeats() {
+      beats.innerHTML = "";
+      for (let i = 0; i < count; i++) beats.appendChild(el("span", "beat"));
+      if (current.ghosts) for (let i = count; i < n; i++) beats.appendChild(el("span", "beat ghost"));
+    }
+    const drum = el("button", "drum", "🥁");
+    drum.setAttribute("aria-label", "북 치기");
+    drum.onclick = () => {
+      if (busy || count >= 6) return;
+      sfx.drum();
+      drum.classList.remove("hit"); void drum.offsetWidth; drum.classList.add("hit");
+      count++;
+      // 쉬운 단계에선 칠 때마다 글자가 반짝이며 소리도 내 줘요
+      if (lv === 0 && count <= n) { sylEls[count - 1].classList.add("lit"); say([sylKey(o.w[count - 1])]); }
+      renderBeats();
+    };
+    const reset = () => { count = 0; sylEls.forEach(s => s.classList.remove("lit")); renderBeats(); };
+    const btns = el("div", "row-btns");
+    const eraseB = el("button", "icon-btn erase", "🧽");
+    eraseB.setAttribute("aria-label", "다시 치기");
+    eraseB.onclick = () => { if (!busy) { sfx.tap(); reset(); } };
+    const doneB = el("button", "icon-btn go", "✔");
+    doneB.setAttribute("aria-label", "다 쳤어요");
+    doneB.onclick = () => {
+      if (busy) return;
+      if (count === n) { sylEls.forEach(s => s.classList.add("lit")); correct(); return; }
+      const keys = [count < n ? "clap_less" : "clap_more"];
+      reset();
+      missed(keys);
+    };
+    btns.append(eraseB, doneB);
+    $("play").append(card, beats, drum, btns);
+    renderBeats();
+    // 쉬운 단계는 끊어서("사! 과!"), 어려운 단계는 붙여서("사과!") 들려줘요
+    const wordSay = lv === 0 && n > 1 ? "cs_" + o.w : "w_" + o.w;
+    ask(`${o.w}! 북을 몇 번 칠까?`, [nameKey(), wordSay, "q_clap", "btn_clap"]);
+    current.glow = () => { current.ghosts = true; renderBeats(); return null; };
+    current.together = async () => {
+      busy = true;
+      reset();
+      current.ghosts = true; renderBeats();
+      await say(["together"]);
+      for (let i = 0; i < n; i++) {
+        sfx.drum();
+        count++;
+        sylEls[i].classList.add("lit");
+        renderBeats();
+        await say([sylKey(o.w[i])]);
+      }
+      busy = false;
+      doneB.classList.add("glow");
+    };
+  }
+
+  // ---------- 2단계: 내 이름 글자 찾기 ----------
+  function qName() {
+    const lv = levels[stage];
+    const fam = settings.family.filter(isHangulWord);
+    const child = isHangulWord(settings.child) ? settings.child : "엄마";
+    // 아이 이름이 절반쯤 나오고, 나머지는 가족
+    const w = pickAnswer(() => (!fam.length || Math.random() < 0.5) ? child : pick(fam));
+    const parts = syls(w);
+    Object.assign(current, { answer: w, show: w, answerKey: wordKey(w) });
+    $("choices").style.display = "none";
+    const card = el("div", "target-card", w);
+    const slots = el("div", "lslots");
+    const slotEls = parts.map(() => slots.appendChild(el("div", "lslot")));
+    const extra = [2, 4, 6][lv];
+    const decoys = shuffle(SYL_POOL.filter(s => !parts.includes(s))).slice(0, extra);
+    const tiles = el("div", "ltiles");
+    const tileEls = shuffle([...parts, ...decoys]).map(s => {
+      const t = el("button", "ltile", s);
+      t.dataset.s = s;
+      t.onclick = () => {
+        if (busy || t.classList.contains("used")) return;
+        if (s === parts[filled]) place(t);
+        else { t.classList.add("wrong"); setTimeout(() => t.classList.remove("wrong"), 600); missed(); }
+      };
+      return tiles.appendChild(t);
+    });
+    let filled = 0;
+    function place(t) {
+      t.classList.remove("glow");
+      t.classList.add("used");
+      slotEls[filled].textContent = t.dataset.s;
+      slotEls[filled].classList.add("filled");
+      filled++;
+      sfx.tap();
+      if (filled === parts.length) correct();
+      else say([sylKey(t.dataset.s)]);
+    }
+    const nextTile = () => tileEls.find(t => !t.classList.contains("used") && t.dataset.s === parts[filled]);
+    $("play").append(card, slots, tiles);
+    ask(`${w === child ? "내 이름 " : ""}${w}! 글자를 순서대로 찾아 줘!`, [nameKey(), "t:" + w, "q_name"]);
+    current.glow = () => nextTile();
+    current.together = async () => {
+      busy = true;
+      await say(["together"]);
+      while (filled < parts.length) {
+        const t = nextTile();
+        t.classList.add("glow");
+        await say([sylKey(t.dataset.s)]);
+        t.classList.remove("glow");
+        t.classList.add("used");
+        slotEls[filled].textContent = t.dataset.s;
+        slotEls[filled].classList.add("filled");
+        filled++;
+      }
+      correct();
+    };
+  }
+
+  // ---------- 3단계: 말 만들기 블록 (소리 합치기) ----------
+  function qBlock() {
+    const lv = levels[stage];
+    const pool = lv === 0 ? wordsByLen(2, 2) : wordsByLen(2, 3);
+    const o = pickAnswer(() => pick(pool));
+    const parts = syls(o.w);
+    Object.assign(current, { answer: o.w, show: `${o.pic} ${o.w}`, answerKey: "w_" + o.w });
+    // 보기 그림 2개 더: 어려운 단계에선 첫 글자가 같은 말(기차-기린)을 섞어요
+    const others = WORDS.filter(x => x.w !== o.w && x.pic !== o.pic);
+    const same = others.filter(x => x.w[0] === o.w[0]);
+    const diff = others.filter(x => x.w[0] !== o.w[0]);
+    const decoys = (lv === 2 && same.length ? [pick(same), pick(diff)] : shuffle(diff).slice(0, 2));
+    const mystery = el("div", "mystery", "🎁");
+    const blocks = el("div", "blocks");
+    const colors = shuffle(["var(--pink)", "var(--sky)", "var(--mint)", "var(--peach)", "var(--lilac)"]);
+    const heard = new Set();
+    const blockEls = parts.map((s, i) => {
+      const b = el("button", "block", s);
+      b.style.background = colors[i];
+      b.setAttribute("aria-label", `${i + 1}번째 블록`);
+      b.onclick = async () => {
+        if (busy || current.joined) return;
+        sfx.tap();
+        b.classList.add("heard");
+        heard.add(i);
+        if (heard.size < parts.length) { say([sylKey(s)]); return; }
+        // 다 들었으면 블록을 붙이고 그림 고르기
+        busy = true;
+        current.joined = true;
+        await say([sylKey(s)]);
+        blocks.classList.add("joined");
+        await sleep(450);
+        for (let k = 0; k < blockEls.length; k++) {
+          blockEls[k].classList.add("lit");
+          await say([sylKey(parts[k])]);
+          blockEls[k].classList.remove("lit");
+        }
+        showChoices();
+        busy = false;
+        $("bubble").textContent = "합치면 무엇이 될까?";
+        current.keys = ["cs_" + o.w, "q_block2"];
+        say(["q_block2"]).then(armIdle);
+      };
+      return blocks.appendChild(b);
+    });
+    function showChoices() {
+      $("choices").style.display = "";
+      choiceButtons(shuffle([o, ...decoys]).map(x => ({ v: x.w, label: x.pic })), "pic");
+    }
+    // 정답을 맞히면 선물 상자가 그림으로 바뀌어요
+    current.onRight = () => { mystery.textContent = o.pic; mystery.classList.add("open"); };
+    $("choices").style.display = "none";
+    $("play").append(mystery, blocks);
+    ask("블록을 하나씩 눌러서 소리를 들어 봐!", [nameKey(), "q_block"]);
+    current.glow = () => current.joined
+      ? $("choices").querySelector(`[data-v="${o.w}"]`)
+      : blockEls.find((b, i) => !heard.has(i));
+    current.together = async () => {
+      busy = true;
+      await say(["together"]);
+      if (!current.joined) { current.joined = true; blocks.classList.add("joined"); showChoices(); }
+      for (let k = 0; k < blockEls.length; k++) {
+        blockEls[k].classList.add("lit");
+        await say([sylKey(parts[k])]);
+        blockEls[k].classList.remove("lit");
+      }
+      $("choices").querySelector(`[data-v="${o.w}"]`).classList.add("glow");
+      busy = false;
+    };
+  }
+
+  // ---------- 4단계: 자음 친구 찾기 ----------
+  function qConsonant() {
+    const lv = levels[stage];
+    const i = pickAnswer(() => rand(0, CONSONANTS.length - 1));
+    const c = CONSONANTS[i];
+    Object.assign(current, { answer: c.ch, show: `${c.ch} ${c.pic}`, answerKey: "kc" + i });
+    const card = el("div", "kcard");
+    card.appendChild(el("div", "pic", c.pic));
+    card.appendChild(el("div", "word", `<span class="syl lit">${c.word[0]}</span>${c.word.slice(1)}`));
+    $("play").appendChild(card);
+    const count = [2, 3, 4][lv];
+    const decoys = shuffle(CONSONANTS.filter(x => x !== c)).slice(0, count - 1);
+    choiceButtons(shuffle([c, ...decoys]).map(x => ({ v: x.ch, label: x.ch })), "letter");
+    ask(`${c.word}의 ${c.word[0]}! ${c.name}을 찾아 줘!`, [nameKey(), "w_" + c.word, "kq" + i]);
+    current.together = async () => {
+      busy = true;
+      await say(["together", "kc" + i]);
+      current.glow().classList.add("glow");
+      busy = false;
+    };
+  }
+
+  // ---------- 글자 친구 카드 (자유 놀이) ----------
+  function goFree() {
+    if (tired()) { goRest(); return; }
+    const box = $("cards");
+    box.innerHTML = "";
+    CONSONANTS.forEach((c, i) => {
+      const b = el("button", "lcard", `<span class="l">${c.ch}</span><span class="p">${c.pic}</span>`);
+      b.setAttribute("aria-label", c.name);
+      b.onclick = () => {
+        if (tired()) { goRest(); return; }
+        box.querySelectorAll(".on").forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+        $("freeSay").textContent = `${c.ch} ${c.name} · ${c.word}`;
+        say(["kc" + i]);
+      };
+      box.appendChild(b);
+    });
+    $("freeSay").textContent = "마음대로 눌러 봐!";
+    show("free");
+    startClock();
+    say([nameKey(), "free"]);
+  }
+  $("freeBack").onclick = () => { renderHome(); show("home"); say(["btn_home"]); };
+
+  // ---------- 버튼 ----------
+  $("sayBtn").onclick = () => {
+    if (!current || busy) return;
+    if (current.keys) say(current.keys);
+  };
+  $("backBtn").onclick = () => { stopSay(); renderHome(); show("home"); say(["btn_home"]); };
+  $("homeBtn").onclick = $("backBtn").onclick;
+  $("againBtn").onclick = () => startStage(stage);
+  $("nextBtn").onclick = () => startStage(Math.min(stage + 1, STAGES.length - 1));
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) pauseClock();
+    else if ($("game").classList.contains("on") || $("free").classList.contains("on")) startClock();
+  });
+
+  // ---------- 시작 ----------
+  (async () => {
+    for (let i = 0; i < MAX_PHOTOS; i++) {
+      const b = await store.get("photo" + i);
+      if (b) photos[i] = { blob: b, url: URL.createObjectURL(b) };
+    }
+    for (const it of ["name", "praise0", "praise1", "praise2", "cheer0", "cheer1", "cheer2"]) {
+      const b = await store.get("rec:" + it);
+      if (b) recBlobs[it] = b;
+    }
+    if (settings.setup) { renderHome(); show("home"); }
+    else show("intro");
+  })();
+
+  // 홈 화면 앱(PWA): 인터넷 없이도 열리게 파일을 저장해 둠
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  }
+</script>
+</body>
+</html>
