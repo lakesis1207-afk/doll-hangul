@@ -2,7 +2,7 @@
 """인천공항 자기부상열차 릴스 (1080x1920, 30fps) 자동 제작 스크립트.
 
 - 사진/영상 합성 + 한글 자막(PNG 오버레이) + 직접 합성한 오리지널 BGM(저작권 무관)
-- 영상 클립은 1.5배속
+- 영상 클립은 2배속
 사용:  python3 build_reels.py <uploads_dir> <font_jua.ttf> <out_dir>
 """
 import math, os, re, subprocess, sys, wave
@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 UP, JUA, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
 EMOJI = "/usr/share/fonts/truetype/noto/NotoColorEmoji.ttf"
-W, H, FPS, SPEED = 1080, 1920, 30, 1.5
+W, H, FPS, SPEED = 1080, 1920, 30, 2.0
 WORK = os.path.join(OUT, "work")
 os.makedirs(WORK, exist_ok=True)
 
@@ -32,10 +32,10 @@ LINE = [("", 0, WHITE)]
 # ---- 구성표 -----------------------------------------------------------
 # kind: photo | video | end ; dur(초, 영상은 1.5배속 후 길이) ; stages: (시작, 끝, [(글, 크기, 색)...])
 SEGS = [
-    dict(kind="photo", src=1, dur=5.2, badge="🚝 용유역 출발", stages=[
+    dict(kind="photo", src=1, dur=5.2, badge="🚝 용유역 출발", pops=[(3.2, 5.0, "💡 꿀팁!")], stages=[
         (0.2, 2.9, [("이번 주말엔 뭐하지? 🤔", 70, WHITE), ("자기부상열차 타고", 68, YELLOW), ("인천공항에서 놀기♡", 80, PINK)]),
         (3.0, 5.2, [("🅿️ 주차 TIP", 72, YELLOW), ("네스트호텔 근처 주차 가능!", 56, WHITE), ("주차 후 용유역에서 출발~", 56, WHITE)])]),
-    dict(kind="video", src="train", dur=7.1667 / SPEED, stages=[
+    dict(kind="video", src="train", dur=7.1667 / SPEED, pops=[(0.8, 3.4, "창밖 뷰 맛집 👀")], stages=[
         (0.2, 4.6, [("자기부상열차 타고 슝~ 🚝", 64, WHITE), ("창밖 풍경이 정말 예뻐요", 52, YELLOW)])]),
     dict(kind="video", src="arrive", dur=3.9 / SPEED, stages=[
         (0.1, 2.5, [("도착! 인천공항 제1터미널 ✈️", 56, YELLOW)])]),
@@ -43,13 +43,13 @@ SEGS = [
         (0.2, 2.7, [("반짝반짝 별빛 속으로 ✨", 62, WHITE), ("코끼리가 나타났어요!", 58, YELLOW)])]),
     dict(kind="photo", src=3, dur=2.7, badge="1. 미디어아트", stages=[
         (0.2, 2.7, [("코끼리랑 인사하는 아이들 🐘", 56, WHITE)])]),
-    dict(kind="photo", src=4, dur=3.2, badge="2. 그림 그리기", stages=[
+    dict(kind="photo", src=4, dur=3.2, badge="2. 그림 그리기", pops=[(0.9, 3.1, "작품 탄생! 🎨")], stages=[
         (0.2, 3.2, [("아이가 직접 색칠한 비행기 ✈️", 54, WHITE), ("엄마 아빠 하트도 쏙 💗", 54, YELLOW)])]),
     dict(kind="photo", src=5, dur=2.7, badge="2. 그림 그리기", stages=[
         (0.2, 2.7, [("그림을 스캔하면...", 62, WHITE), ("두근두근 👀", 58, YELLOW)])]),
-    dict(kind="video", src="media", dur=6.0, trim=9.0, badge="2. 그림 그리기", stages=[
+    dict(kind="video", src="media", dur=6.0, pops=[(1.5, 4.5, "대박 신기! 😲")], trim=9.0, badge="2. 그림 그리기", stages=[
         (0.2, 5.9, [("짜잔! 내 그림이 영상으로 ✨", 56, YELLOW)])]),
-    dict(kind="video", src="robot", dur=11.3 / SPEED, badge="3. 로봇 초상화", stages=[
+    dict(kind="video", src="robot", dur=11.3 / SPEED, pops=[(0.9, 4.0, "로봇 화가 등장 🤖")], badge="3. 로봇 초상화", stages=[
         (0.2, 7.4, [("로봇이 얼굴을 보고", 60, WHITE), ("쓱쓱 그려줘요 🤖", 62, YELLOW)])]),
     dict(kind="photo", src=6, dur=3.0, badge="3. 로봇 초상화", stages=[
         (0.2, 3.0, [("이렇게 그려줬어요! ✨", 62, WHITE), ("신기하죠?", 56, YELLOW)])]),
@@ -59,7 +59,7 @@ SEGS = [
         (0.2, 2.9, [("찰칵! 가족사진 추억 남기기 💜", 52, WHITE)])]),
     dict(kind="photo", src=9, dur=3.2, badge="5. 빙글빙글", stages=[
         (0.2, 3.2, [("의자에 앉아 빙그르르~ 🌀", 58, WHITE), ("은근히 재밌어요!", 54, YELLOW)])]),
-    dict(kind="end", src=2, dur=6.0, stages=[
+    dict(kind="end", src=2, dur=6.0, pops=[(3.4, 6.0, "📌 저장하고 주말에 GO!")], stages=[
         (0.2, 3.0, [("공항에서 비행기만", 66, WHITE), ("타지 마세요~", 72, YELLOW), ("아이와 충분히 재밌게", 62, WHITE), ("놀 수 있어요^^", 70, PINK)]),
         (3.1, 6.0, [("이번 주말", 74, YELLOW), ("자기부상열차 타고", 66, WHITE), ("인천공항 어떠세요? ✈️♡", 62, PINK)])]),
 ]
@@ -70,7 +70,7 @@ RE_EMOJI = re.compile("([\U0001F000-\U0001FFFF☀-➿♡♥][️]?)")
 SWAP = {"♡": "💗", "♥": "❤"}
 
 
-def render_line(text, size, color, maxw=940):
+def render_line(text, size, color, maxw=940, stroke=9):
     for k, v in SWAP.items():
         text = text.replace(k, v)
     while True:
@@ -96,8 +96,9 @@ def render_line(text, size, color, maxw=940):
     for kind, v, px in pieces:
         if kind == "t":
             # 그림자 + 두꺼운 외곽선 + 본문
-            d.text((px + pad + 3, pad + 7), v, font=f, fill=(20, 10, 40, 150), stroke_width=10, stroke_fill=(20, 10, 40, 150))
-            d.text((px + pad, pad), v, font=f, fill=color, stroke_width=9, stroke_fill=(43, 27, 77, 255))
+            if stroke:
+                d.text((px + pad + 3, pad + 7), v, font=f, fill=(20, 10, 40, 150), stroke_width=stroke + 1, stroke_fill=(20, 10, 40, 150))
+            d.text((px + pad, pad), v, font=f, fill=color, stroke_width=stroke, stroke_fill=(43, 27, 77, 255))
         else:
             img.alpha_composite(v, (int(px + pad), int(pad + size * 0.08)))
     return img
@@ -124,6 +125,18 @@ def render_badge(text):
     d.rounded_rectangle((x0, 300, x0 + w, 300 + h), radius=h // 2, fill=(255, 92, 160, 235))
     im.alpha_composite(ef_text, (x0 + 25 - 24, 300 + 3 - 6))
     return im
+
+
+def render_pop(text, size=60):
+    """팝업 스티커: 흰 알약 + 분홍 테두리 + 살짝 기울임"""
+    t = render_line(text, size, (255, 70, 150), 860, stroke=0)
+    w, h = t.width + 50, t.height + 10
+    im = Image.new("RGBA", (w + 40, h + 40), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    d.rounded_rectangle((24, 28, w + 24, h + 28), radius=h // 2, fill=(20, 10, 40, 110))   # 그림자
+    d.rounded_rectangle((20, 20, w + 20, h + 20), radius=h // 2, fill=(255, 255, 255, 250), outline=(255, 70, 150, 255), width=7)
+    im.alpha_composite(t, (20 + 25 - 24, 20 + 5 - 6))
+    return im.rotate(-4, resample=Image.BICUBIC, expand=True)
 
 
 # ---- 배경/전경 합성 (사진) -----------------------------------------------
@@ -161,6 +174,16 @@ def caption_inputs(seg, idx):
         args += ["-loop", "1", "-framerate", str(FPS), "-t", f"{seg['dur']:.3f}", "-i", p]
         filt.append(f"[{n}:v]format=rgba,fade=t=in:st={a:.2f}:d=0.3:alpha=1,fade=t=out:st={b-0.25:.2f}:d=0.25:alpha=1[o{n}]")
         filt.append(f"{last}[o{n}]overlay=0:0:format=auto[v{n}]")
+        last = f"[v{n}]"; n += 1
+    for k, (a, b, text) in enumerate(seg.get("pops", [])):
+        p = f"{WORK}/p{idx}_{k}.png"; render_pop(text).save(p)
+        b = min(b, seg["dur"] - 0.05)
+        args += ["-loop", "1", "-framerate", str(FPS), "-t", f"{seg['dur']:.3f}", "-i", p]
+        # 통통 튀며 등장(스프링) -> 유지 -> 페이드아웃
+        sc = f"if(lt(t,{a}),0.02,max(0.02,1-exp(-14*(t-{a}))*cos(18*(t-{a}))))"
+        filt.append(f"[{n}:v]format=rgba,scale=w='max(2,trunc(iw*{sc}/2)*2)':h=-2:eval=frame,"
+                    f"fade=t=out:st={b-0.2:.2f}:d=0.2:alpha=1[o{n}]")
+        filt.append(f"{last}[o{n}]overlay=x='(W-w)/2':y='560-h/2':enable='between(t,{a},{b})':format=auto[v{n}]")
         last = f"[v{n}]"; n += 1
     return args, filt, last
 
